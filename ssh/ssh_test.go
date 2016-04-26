@@ -62,7 +62,8 @@ func TestCommitStage(t *testing.T) {
 		t.FailNow()
 	}
 
-	cmd := exec.Command("rsync", "-v", "--delete", "-aR", ".", "-e", "ssh -p 1567 -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null", "sshTest@127.0.0.1:sshTest")
+	exec.Command("bash", "-c", "ssh-keygen -t rsa -b 2048 -C 'slurp@test' -N '' -f /tmp/slurp-usr").Run()
+	cmd := exec.Command("rsync", "-v", "--delete", "-aR", ".", "-e", "ssh -i /tmp/slurp-usr -p 1567 -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null", "sshTest@127.0.0.1:sshTest")
 	cmd.Dir = "/tmp/sshTest/"
 	out, err := cmd.CombinedOutput()
 	if err != nil {
