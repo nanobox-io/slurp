@@ -1,10 +1,9 @@
+// Package "api" defines the routes accessible and the logic when they are hit.
 package api
 
 import (
-	"crypto/tls"
 	"encoding/json"
 	"errors"
-	"fmt"
 	"io/ioutil"
 	"net/http"
 
@@ -15,8 +14,8 @@ import (
 )
 
 var (
-	BadJson      = errors.New("Bad JSON Syntax Received in Body")
-	BodyReadFail = errors.New("Body Read Failed")
+	badJson      = errors.New("Bad JSON Syntax Received in Body")
+	bodyReadFail = errors.New("Body Read Failed")
 )
 
 type (
@@ -31,34 +30,30 @@ type (
 // start the web server
 func StartApi() error {
 	if config.Insecure {
-		config.Log.Info("Api listening at http://%s:%s...", config.ApiHost, config.ApiPort)
-		return http.ListenAndServe(fmt.Sprintf("%s:%s", config.ApiHost, config.ApiPort), routes())
+		config.Log.Info("Api listening at http://%s...", config.ApiAddress)
+		return http.ListenAndServe(config.ApiAddress, routes())
 	}
+
 	var auth nanoauth.Auth
-	var cert *tls.Certificate
-	var err error
-	if config.ApiCert == "" {
-		cert, err = nanoauth.Generate("slurp.nanobox.io")
-	} else {
-		cert, err = nanoauth.Load(config.ApiCert, config.ApiKey, config.ApiKeyPassword)
-	}
+	cert, err := nanoauth.Generate("slurp.nanobox.io")
 	if err != nil {
 		return err
 	}
 	auth.Certificate = cert
 	auth.Header = "X-AUTH-TOKEN"
 
-	config.Log.Info("Api listening at https://%s:%s...", config.ApiHost, config.ApiPort)
-	return auth.ListenAndServeTLS(fmt.Sprintf("%s:%s", config.ApiHost, config.ApiPort), config.ApiToken, routes())
+	config.Log.Info("Api listening at https://%s...", config.ApiAddress)
+	return auth.ListenAndServeTLS(config.ApiAddress, config.ApiToken, routes())
 }
 
 // api routes
 func routes() *pat.Router {
 	router := pat.New()
 
-	router.Post("/", addStage)
-	router.Put("/{buildId}", commitStage)
-	router.Delete("/{buildId}", deleteStage)
+	// keep "/stages" so a build named "ping" won't break anything
+	router.Post("/stages", addStage)
+	router.Put("/stages/{buildId}", commitStage)
+	router.Delete("/stages/{buildId}", deleteStage)
 
 	router.Get("/ping", pong)
 
@@ -97,14 +92,14 @@ func parseBody(req *http.Request, v interface{}) error {
 	b, err := ioutil.ReadAll(req.Body)
 	if err != nil {
 		config.Log.Error(err.Error())
-		return BodyReadFail
+		return bodyReadFail
 	}
 	defer req.Body.Close()
 
 	// parse body and store in v
 	err = json.Unmarshal(b, v)
 	if err != nil {
-		return BadJson
+		return badJson
 	}
 
 	return nil

@@ -1,3 +1,4 @@
+// Package "slurp" contains the core logic to fetch, pipe, and un/compress builds.
 package slurp
 
 import (
@@ -12,17 +13,9 @@ import (
 	"github.com/nanopack/slurp/ssh"
 )
 
-// Build ties the build's id and auth-secret together.
-type Build struct {
-	// (backend) id of build
-	buildId string `json:"build-id,omitempty"`
-	// random generated username (cleaner/easier for clients) for ssh server (or priv key)
-	authSecret string `json:"secret,omitempty"`
-}
-
 var (
 	// copy of all non-committed builds
-	builds []Build
+	builds []string
 
 	// mutex ensures updates to builds are atomic
 	mutex = sync.Mutex{}
@@ -34,17 +27,14 @@ var (
 // generates, and returns, a new user secret for rsyncing.
 // Bash equivalent:
 //  `curl localhost:7410/blobs/oldId | tar -C buildDir/newId -zxf -`
-func AddStage(oldId, newId string) (string, error) {
-	// buildDir default to "/tmp"
-	// buildId default to "0000"
-	// backend.ReadBlob(oldId) | tar -C buildDir/newId -zxf -
-
+func AddStage(oldId, newId string) error {
 	// prepare location for extraction
 	err := os.MkdirAll(config.BuildDir+"/"+newId, 0755)
 	if err != nil {
-		return "", fmt.Errorf("Failed to create build dir - %v", err)
+		return fmt.Errorf("Failed to create build dir - %v", err)
 	}
 
+	// backend.ReadBlob(oldId) | tar -C buildDir/newId -zxf -
 	if oldId != "" {
 		// todo: can this stream somehow? send a *reader to readblob, goroutine readblob
 		//   then by assigning the *reader to cmd.Stdin, it shouldn't block (keep from
@@ -52,7 +42,7 @@ func AddStage(oldId, newId string) (string, error) {
 		// get last build from backend
 		res, err := backend.ReadBlob(oldId)
 		if err != nil {
-			return "", fmt.Errorf("Failed to get old build - %v", err)
+			return fmt.Errorf("Failed to get old build - %v", err)
 		}
 
 		config.Log.Trace("Fetched build")
@@ -69,23 +59,23 @@ func AddStage(oldId, newId string) (string, error) {
 		// err := cmd.Run()
 		out, err := cmd.CombinedOutput()
 		if err != nil {
-			return "", fmt.Errorf("Failed to extract build to dir '%s' - %v", out, err)
+			return fmt.Errorf("Failed to extract build to dir '%s' - %v", out, err)
 		}
 
 		config.Log.Trace("Extracted build")
 		res.Close()
 	}
 
-	secret, err := ssh.AddUser()
+	err = ssh.AddUser(newId)
 	if err != nil {
-		return "", fmt.Errorf("Failed to add user - %v", err)
+		return fmt.Errorf("Failed to add user - %v", err)
 	}
 
 	mutex.Lock()
-	builds = append(builds, Build{buildId: newId, authSecret: secret})
+	builds = append(builds, newId)
 	mutex.Unlock()
 
-	return secret, nil
+	return nil
 }
 
 // CommitStage compresses the new build, uploads it to the backend and removes
@@ -93,12 +83,10 @@ func AddStage(oldId, newId string) (string, error) {
 // Bash equivalent:
 //  `tar -C buildDir/buildId -czf - . | curl localhost:7410/blobs/newId --data-binary @-`
 func CommitStage(buildId string) error {
-	// tar -C buildDir/buildId -czf - . | backend.WriteBlob(buildId)
-
 	// remove user first
-	user, err := getUser(buildId)
+	err := getUser(buildId)
 	if err == nil {
-		err = ssh.DelUser(user)
+		err = ssh.DelUser(buildId)
 		if err != nil {
 			return fmt.Errorf("Failed to remove user - %v", err)
 		}
@@ -115,6 +103,7 @@ func CommitStage(buildId string) error {
 		return fmt.Errorf("Build dir doesn't exist - %v", err)
 	}
 
+	// tar -C buildDir/buildId -czf - . | backend.WriteBlob(buildId)
 	// prepare to compress build dir
 	cmd := exec.Command("tar", "-C", config.BuildDir+"/"+buildId, "-czf", "-", ".")
 	// cmd.Dir = "/tmp"
@@ -142,10 +131,19 @@ func CommitStage(buildId string) error {
 
 // DeleteStage removes files for a specific build.
 func DeleteStage(buildId string) error {
+	// remove user first
+	err := getUser(buildId)
+	if err != nil {
+		err = ssh.DelUser(buildId)
+		if err != nil {
+			return fmt.Errorf("Failed to remove user - %v", err)
+		}
+	}
+
 	config.Log.Trace("Removing '%v'", config.BuildDir+"/"+buildId)
 
 	// remove build files
-	err := os.RemoveAll(config.BuildDir + "/" + buildId)
+	err = os.RemoveAll(config.BuildDir + "/" + buildId)
 	if err != nil {
 		return fmt.Errorf("Failed to remove build dir - %v", err)
 	}
@@ -153,7 +151,7 @@ func DeleteStage(buildId string) error {
 	// remove cached build
 	mutex.Lock()
 	for i := range builds {
-		if builds[i].buildId == buildId {
+		if builds[i] == buildId {
 			builds = append(builds[:i], builds[i+1:]...)
 			break
 		}
@@ -164,11 +162,11 @@ func DeleteStage(buildId string) error {
 }
 
 // getUser gets the user secret corresponding to an uncommitted build.
-func getUser(buildId string) (string, error) {
+func getUser(buildId string) error {
 	for _, build := range builds {
-		if build.buildId == buildId {
-			return build.authSecret, nil
+		if build == buildId {
+			return nil
 		}
 	}
-	return "", fmt.Errorf("No Build Found")
+	return fmt.Errorf("No Build Found")
 }

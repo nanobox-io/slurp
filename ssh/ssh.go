@@ -1,3 +1,5 @@
+// Package "ssh" contains the ssh server logic. It authenticates a user based
+// on the build-id and starts an rsync server for syncing code from the client.
 package ssh
 
 import (
@@ -8,63 +10,45 @@ import (
 	"encoding/pem"
 	"fmt"
 	"io/ioutil"
-	mrand "math/rand"
 	"net"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"strings"
-	"time"
 
 	"golang.org/x/crypto/ssh"
 
 	"github.com/nanopack/slurp/config"
 )
 
-// characters for username
-const letterBytes = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
-
-// random seed
-var seed = time.Now().UnixNano()
-
 // Check for host key, generate and write to a file if none exist
-func init() {
-	// seed random user generation
-	mrand.Seed(seed)
-
+func initialize() error {
 	// check if key exists
 	_, err := os.Stat(config.SshHostKey)
 	if err == nil {
-		return
+		return nil
 	}
 
 	// generate a new host key
 	_, hostPrv, err := genKeyPair()
 	if err != nil {
-		config.Log.Fatal("Failed to generate host key - %v", err)
+		return fmt.Errorf("Failed to generate host key - %v", err)
 	}
 
 	// ensure keyfile directory exists
 	err = os.MkdirAll(filepath.Dir(config.SshHostKey), 0755)
 	if err != nil {
-		config.Log.Fatal("Failed to create host key directory - %v", err)
+		return fmt.Errorf("Failed to create host key directory - %v", err)
 	}
 
 	// store new host key
 	key := []byte(hostPrv)
 	err = ioutil.WriteFile(config.SshHostKey, key, 0600)
 	if err != nil {
-		config.Log.Fatal("Failed to write host key to file - %v", err)
+		return fmt.Errorf("Failed to write host key to file - %v", err)
 	}
-}
 
-// generate a random user for rsync clients
-func genUser() string {
-	b := make([]byte, 32)
-	for i := range b {
-		b[i] = letterBytes[mrand.Intn(len(letterBytes))]
-	}
-	return (string(b))
+	return nil
 }
 
 // genKeyPair make a pair of public and private keys for SSH access.
@@ -102,6 +86,11 @@ func getKey() ([]byte, error) {
 
 // StartSSH starts the ssh server that will handle the rsync
 func Start() error {
+	err := initialize()
+	if err != nil {
+		return fmt.Errorf("Failed to prep host key - %v", err)
+	}
+
 	// get host key
 	hostPrv, err := getKey()
 	if err != nil {
@@ -130,7 +119,7 @@ func Start() error {
 		return fmt.Errorf("Failed to listen for rsync - %v", err)
 	}
 
-	config.Log.Info("Listening for rsync on '%v'...", config.SshAddr)
+	config.Log.Info("SSH listening at %v...", config.SshAddr)
 
 	// accept connections
 	go func() {
@@ -168,6 +157,7 @@ func userAuth(conn ssh.ConnMetadata, key ssh.PublicKey) (*ssh.Permissions, error
 
 // handle tcp connection
 func handleConnection(conn net.Conn, sshConfig *ssh.ServerConfig) {
+	config.Log.Trace("Authorized users - %v", authUsers)
 	sshConn, chans, reqs, err := ssh.NewServerConn(conn, sshConfig)
 	if err != nil {
 		config.Log.Error("Failed to handshake - %v", err)
@@ -186,12 +176,12 @@ func handleConnection(conn net.Conn, sshConfig *ssh.ServerConfig) {
 			newChannel.Reject(ssh.UnknownChannelType, "unknown channel type")
 			continue
 		}
-		handleChannel(newChannel)
+		handleChannel(newChannel, sshConn.Conn.User())
 	}
 }
 
 // handle ssh connections
-func handleChannel(newChannel ssh.NewChannel) {
+func handleChannel(newChannel ssh.NewChannel, build string) {
 	channel, requests, err := newChannel.Accept()
 	if err != nil {
 		config.Log.Error("Failed to accept channel request - %v", err)
@@ -211,7 +201,7 @@ func handleChannel(newChannel ssh.NewChannel) {
 					continue // todo: or break?
 				}
 
-				waitedRun(channel, string(req.Payload[4:]))
+				waitedRun(channel, build)
 			case "env":
 				ok = true
 			}
@@ -221,20 +211,17 @@ func handleChannel(newChannel ssh.NewChannel) {
 }
 
 // run command (rsync server)
-func waitedRun(channel ssh.Channel, command string) {
+func waitedRun(channel ssh.Channel, build string) {
 	defer channel.Close()
 
-	config.Log.Trace("Command: '%v'", command)
-	cmd := exec.Command("/bin/bash", "-c", command)
-	cmd.Dir = config.BuildDir // todo: isolate maybe?
+	config.Log.Trace("Build: '%v'", build)
+	cmd := exec.Command("rsync", "--server", "-vlogDtprRe.iLsfx", "--delete", ".", build+"/")
+	cmd.Dir = config.BuildDir
 
 	// connect stdin/out to the ssh pipe
 	cmd.Stdin = channel
 	cmd.Stdout = channel
 	cmd.Stderr = channel.Stderr()
-
-	// todo: will change once exec.Command has hardcoded values
-	config.Log.Trace("running command %+v", cmd.Args)
 
 	// start running the command
 	err := cmd.Start()

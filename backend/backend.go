@@ -15,32 +15,34 @@ type blobReadWriter interface {
 	writeBlob(id string, blob io.Reader) error
 }
 
-var Backend blobReadWriter // exportable for testing.. todo: if needed
+// the pluggable (future) backend
+var backend blobReadWriter
 
+// Initialize prepares the backend and ensures it is available
 func Initialize() error {
 	var err error
 	var u *url.URL
 	u, err = url.Parse(config.StoreAddr)
 	if err != nil {
-		return fmt.Errorf("Failed to parse db connection - %v", err)
+		return fmt.Errorf("Failed to parse backend connection - %v", err)
 	}
 	switch u.Scheme {
 	case "hoarder":
-		Backend = &hoarder{}
+		backend = &hoarder{}
 	default:
-		Backend = &hoarder{}
+		backend = &hoarder{}
 	}
 
 	config.StoreAddr = u.Host
-	return Backend.initialize()
+	return backend.initialize()
 }
 
 // ReadBlob reads a blob from a storage backend
 func ReadBlob(id string) (io.ReadCloser, error) {
-	return Backend.readBlob(id)
+	return backend.readBlob(id)
 }
 
 // WriteBlob writes a blob to a storage backend
 func WriteBlob(id string, blob io.Reader) error {
-	return Backend.writeBlob(id, blob)
+	return backend.writeBlob(id, blob)
 }

@@ -6,16 +6,18 @@ import (
 	"github.com/nanopack/slurp/core"
 )
 
+// for whatever reason, these need to be exported so json.[un]marshal can utilize it
 type build struct {
-	// for whatever reason, these need to be exported so json.[un]marshal can utilize it
-	OldId string `json:"old-id"`
-	NewId string `json:"new-id"`
+	OldId string `json:"old-id"` // build to fetch from storage
+	NewId string `json:"new-id"` // build to stage and store
 }
 
 type auth struct {
 	AuthSecret string `json:"secret"`
 }
 
+// addStage prepares a directory for receiving the new build. If an old build is specified,
+// that build is fetched from hoarder, otherwise a new directory is created.
 func addStage(rw http.ResponseWriter, req *http.Request) {
 	var stage build
 	err := parseBody(req, &stage)
@@ -30,15 +32,18 @@ func addStage(rw http.ResponseWriter, req *http.Request) {
 	}
 
 	// stage the build
-	secret, err := slurp.AddStage(stage.OldId, stage.NewId)
+	err = slurp.AddStage(stage.OldId, stage.NewId)
 	if err != nil {
 		writeBody(rw, req, apiError{err.Error()}, http.StatusInternalServerError)
 		return
 	}
 
-	writeBody(rw, req, auth{secret}, http.StatusOK)
+	writeBody(rw, req, auth{stage.NewId}, http.StatusOK)
 }
 
+// commitStage is called once the local build is synced with the staged build. It will
+// compress and upload the staged build to hoarder. CommitStage will also remove the
+// user for security.
 func commitStage(rw http.ResponseWriter, req *http.Request) {
 	// PUT /stages/{buildId}
 	buildId := req.URL.Query().Get(":buildId")
@@ -50,9 +55,17 @@ func commitStage(rw http.ResponseWriter, req *http.Request) {
 		return
 	}
 
+	// delete the staged build
+	err = slurp.DeleteStage(buildId)
+	if err != nil {
+		writeBody(rw, req, apiError{err.Error()}, http.StatusInternalServerError)
+		return
+	}
+
 	writeBody(rw, req, apiMsg{"Success"}, http.StatusOK)
 }
 
+// deleteStage removes the staged build directory
 func deleteStage(rw http.ResponseWriter, req *http.Request) {
 	// DELETE /stages/{buildId}
 	buildId := req.URL.Query().Get(":buildId")

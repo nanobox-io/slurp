@@ -2,6 +2,8 @@ package ssh
 
 import (
 	"sync"
+
+	"github.com/nanopack/slurp/config"
 )
 
 var (
@@ -13,18 +15,18 @@ var (
 )
 
 // Add an authorized user
-func AddUser() (string, error) {
-	user := genUser()
-
+func AddUser(user string) error {
+	config.Log.Trace("Adding user %v", user)
 	mutex.Lock()
 	authUsers = append(authUsers, user)
 	mutex.Unlock()
 
-	return user, nil
+	return nil
 }
 
 // Remove an authorized user
 func DelUser(user string) error {
+	config.Log.Trace("Removing user %v", user)
 	mutex.Lock()
 	for i := range authUsers {
 		if authUsers[i] == user {

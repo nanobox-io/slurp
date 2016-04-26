@@ -11,23 +11,27 @@ import (
 
 type hoarder struct{}
 
+// ensure hoarder is up
 func (self hoarder) initialize() error {
 	_, err := self.rest("GET", "ping", nil)
 	return err
 }
 
+// get blob from hoarder and return Reader for piping to next command
 func (self hoarder) readBlob(id string) (io.ReadCloser, error) {
-	fmt.Println("Id:", id)
 	res, err := self.rest("GET", "blobs/"+id, nil)
 	return res.Body, err
 }
 
+// pipe blob to hoarder
 func (self hoarder) writeBlob(id string, blob io.Reader) error {
 	_, err := self.rest("POST", "blobs/"+id, blob)
 	return err
 }
 
+// rest is a helper method http client to interact with hoarder
 func (self hoarder) rest(method, path string, body io.Reader) (*http.Response, error) {
+	config.Log.Trace("[client] - %v hoarder/%v", method, path)
 	var client *http.Client
 	client = http.DefaultClient
 	uri := fmt.Sprintf("https://%s/%s", config.StoreAddr, path)
