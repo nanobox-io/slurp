@@ -18,7 +18,7 @@ import (
 
 	"golang.org/x/crypto/ssh"
 
-	"github.com/nanopack/slurp/config"
+	"github.com/nanobox-io/slurp/config"
 )
 
 // Check for host key, generate and write to a file if none exist

@@ -3,7 +3,7 @@ package api
 import (
 	"net/http"
 
-	"github.com/nanopack/slurp/core"
+	"github.com/nanobox-io/slurp/core"
 )
 
 // for whatever reason, these need to be exported so json.[un]marshal can utilize it

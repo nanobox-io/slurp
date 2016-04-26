@@ -3,7 +3,7 @@ package ssh
 import (
 	"sync"
 
-	"github.com/nanopack/slurp/config"
+	"github.com/nanobox-io/slurp/config"
 )
 
 var (

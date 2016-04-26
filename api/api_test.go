@@ -12,9 +12,9 @@ import (
 
 	"github.com/jcelliott/lumber"
 
-	"github.com/nanopack/slurp/api"
-	"github.com/nanopack/slurp/backend"
-	"github.com/nanopack/slurp/config"
+	"github.com/nanobox-io/slurp/api"
+	"github.com/nanobox-io/slurp/backend"
+	"github.com/nanobox-io/slurp/config"
 )
 
 func TestMain(m *testing.M) {

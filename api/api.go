@@ -10,7 +10,7 @@ import (
 	"github.com/gorilla/pat"
 	"github.com/nanobox-io/golang-nanoauth"
 
-	"github.com/nanopack/slurp/config"
+	"github.com/nanobox-io/slurp/config"
 )
 
 var (

@@ -9,8 +9,8 @@ import (
 
 	"github.com/jcelliott/lumber"
 
-	"github.com/nanopack/slurp/config"
-	"github.com/nanopack/slurp/ssh"
+	"github.com/nanobox-io/slurp/config"
+	"github.com/nanobox-io/slurp/ssh"
 )
 
 func TestMain(m *testing.M) {
