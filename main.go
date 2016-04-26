@@ -4,13 +4,13 @@
 // Usage
 //
 // To start slurp as a server, simply run:
-// 
+//
 //  slurp
-// 
+//
 // For more specific usage information, refer to the help doc (slurp -h):
 //  Usage:
 //    slurp [flags]
-//  
+//
 //  Flags:
 //    -a, --api-address="127.0.0.1:1566": Listen address for the API
 //    -t, --api-token="secret": Token for API Access
@@ -22,7 +22,7 @@
 //    -k, --ssh-host="/var/db/slurp/slurp_rsa": SSH host (private) key file
 //    -S, --store-addr="hoarder://127.0.0.1:7410": Storage host address
 //    -T, --store-token="": Storage auth token
-// 
+//
 package main
 
 import (

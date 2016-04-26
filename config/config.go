@@ -1,4 +1,4 @@
-// config is a central location for configuration options. It also contains
+// Package "config" is a central location for configuration options. It also contains
 // config file parsing logic.
 package config
 
@@ -12,19 +12,18 @@ import (
 )
 
 var (
-	ApiToken   = "secret"
-	ApiAddress = "127.0.0.1:1566"
-	BuildDir   = "/var/db/slurp/build/"
-	ConfigFile = ""
-	Insecure   = false
-	LogLevel   = "info"
-	SshAddr    = "127.0.0.1:1567"
-	SshHostKey = "/var/db/slurp/slurp_rsa" // "host-file"
-	StoreAddr  = "hoarder://127.0.0.1:7410"
-	StoreToken = ""
+	ApiToken   = "secret"                   // Token for API Access
+	ApiAddress = "127.0.0.1:1566"           // Listen address for the API
+	BuildDir   = "/var/db/slurp/build/"     // Build staging directory
+	ConfigFile = ""                         // Configuration file to load
+	Insecure   = false                      // Disable tls key checking (client) and listen on http (server)
+	LogLevel   = "info"                     // Log level to output [fatal|error|info|debug|trace]
+	SshAddr    = "127.0.0.1:1567"           // Address ssh server will listen on (ip:port combo)
+	SshHostKey = "/var/db/slurp/slurp_rsa"  // SSH host (private) key file
+	StoreAddr  = "hoarder://127.0.0.1:7410" // Storage host address
+	StoreToken = ""                         // Storage auth token
 
-	Server = true
-	Log    lumber.Logger
+	Log lumber.Logger // Central logger for slurp
 )
 
 // AddFlags adds the available cli flags
