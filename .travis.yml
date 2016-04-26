@@ -1,0 +1,9 @@
+sudo: required
+language: go
+go: 1.6
+
+install: 
+  - go get github.com/nanopack/hoarder
+  - go get -t -v .
+  - ./hoarder --server -b file:///tmp/hoarder &
+script: go test -v ./...

@@ -34,7 +34,7 @@ func (self hoarder) rest(method, path string, body io.Reader) (*http.Response, e
 	config.Log.Trace("[client] - %v hoarder/%v", method, path)
 	var client *http.Client
 	client = http.DefaultClient
-	uri := fmt.Sprintf("https://%s/%s", config.StoreAddr, path)
+	uri := fmt.Sprintf("https://%s/%s", storeAddr, path)
 
 	if config.Insecure {
 		http.DefaultTransport.(*http.Transport).TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
@@ -48,7 +48,7 @@ func (self hoarder) rest(method, path string, body io.Reader) (*http.Response, e
 	res, err := client.Do(req)
 	if err != nil {
 		// if requesting `https://` failed, server may have been started with `-i`, try `http://`
-		uri = fmt.Sprintf("http://%s/%s", config.StoreAddr, path)
+		uri = fmt.Sprintf("http://%s/%s", storeAddr, path)
 		req, er := http.NewRequest(method, uri, body)
 		if er != nil {
 			panic(er)

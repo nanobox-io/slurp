@@ -15,8 +15,10 @@ type blobReadWriter interface {
 	writeBlob(id string, blob io.Reader) error
 }
 
-// the pluggable (future) backend
-var backend blobReadWriter
+var (
+	backend   blobReadWriter // the pluggable (future) backend
+	storeAddr string         // storage address
+)
 
 // Initialize prepares the backend and ensures it is available
 func Initialize() error {
@@ -32,8 +34,7 @@ func Initialize() error {
 	default:
 		backend = &hoarder{}
 	}
-
-	config.StoreAddr = u.Host
+	storeAddr = u.Host
 	return backend.initialize()
 }
 

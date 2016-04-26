@@ -1,4 +1,4 @@
-<!-- [![Build Status](https://travis-ci.org/nanobox-io/slurp.svg)](https://travis-ci.org/nanobox-io/slurp) -->
+[![Build Status](https://travis-ci.org/nanobox-io/slurp.svg)](https://travis-ci.org/nanobox-io/slurp)
 [![GoDoc](https://godoc.org/github.com/nanobox-io/slurp?status.svg)](https://godoc.org/github.com/nanobox-io/slurp)
 
 # Slurp
