@@ -116,6 +116,10 @@ Fields:
 - routinely clean up undeleted builds
 
 ## Changelog
+- v0.0.2 (May 4, 2016)
+  - Create config option (`store-ssl`) to enable cert verification to storage backend
+  - Add `-v` and `--version` as a command
+
 - v0.0.1 (April 25, 2016)
   - slurp is born
 

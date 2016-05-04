@@ -27,6 +27,7 @@
 package main
 
 import (
+	"fmt"
 	"os"
 
 	"github.com/jcelliott/lumber"
@@ -62,6 +63,11 @@ func startSlurp(ccmd *cobra.Command, args []string) {
 	}
 
 	config.Log = lumber.NewConsoleLogger(lumber.LvlInt(config.LogLevel))
+
+	if config.Version {
+		fmt.Printf("slurp %s\n", VERSION)
+		os.Exit(0)
+	}
 
 	// initialize backend
 	err := backend.Initialize()

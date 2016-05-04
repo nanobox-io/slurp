@@ -21,8 +21,9 @@ var (
 	SshAddr    = "127.0.0.1:1567"           // Address ssh server will listen on (ip:port combo)
 	SshHostKey = "/var/db/slurp/slurp_rsa"  // SSH host (private) key file
 	StoreAddr  = "hoarder://127.0.0.1:7410" // Storage host address
-	StoreToken = ""                         // Storage auth token
 	StoreSSL   = false                      // Disable tls key checking (client) and listen on http (server)
+	StoreToken = ""                         // Storage auth token
+	Version    = false                      // Print version info and exit
 
 	Log lumber.Logger // Central logger for slurp
 )
@@ -42,6 +43,8 @@ func AddFlags(cmd *cobra.Command) {
 	cmd.PersistentFlags().StringVarP(&StoreAddr, "store-addr", "S", StoreAddr, "Storage host address")
 	cmd.PersistentFlags().StringVarP(&StoreToken, "store-token", "T", StoreToken, "Storage auth token")
 	cmd.PersistentFlags().BoolVarP(&StoreSSL, "store-ssl", "I", StoreSSL, "Enable tls certificate verification when connecting to storage")
+
+	cmd.Flags().BoolVarP(&Version, "version", "v", Version, "Print version info and exit")
 }
 
 // LoadConfigFile reads the specified config file
