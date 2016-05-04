@@ -73,6 +73,7 @@ Flags:
   -s, --ssh-addr="127.0.0.1:1567": Address ssh server will listen on (ip:port combo)
   -k, --ssh-host="/var/db/slurp/slurp_rsa": SSH host (private) key file
   -S, --store-addr="hoarder://127.0.0.1:7410": Storage host address
+  -I, --store-ssl[=false]: Enable tls certificate verification when connecting to storage
   -T, --store-token="": Storage auth token
 ```
 
@@ -111,7 +112,6 @@ Fields:
 - **secret**: Contains the username to ssh with (ID of new build)
 
 ## Todo
-- tests
 - rebuild auth user list on reboot
 - routinely clean up undeleted builds
 

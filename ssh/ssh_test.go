@@ -24,7 +24,7 @@ func TestMain(m *testing.M) {
 
 	// start ssh server
 	go ssh.Start()
-	<-time.After(2 * time.Second)
+	<-time.After(3 * time.Second)
 
 	rtn := m.Run()
 

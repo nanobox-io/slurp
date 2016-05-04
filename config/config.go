@@ -22,6 +22,7 @@ var (
 	SshHostKey = "/var/db/slurp/slurp_rsa"  // SSH host (private) key file
 	StoreAddr  = "hoarder://127.0.0.1:7410" // Storage host address
 	StoreToken = ""                         // Storage auth token
+	StoreSSL   = false                      // Disable tls key checking (client) and listen on http (server)
 
 	Log lumber.Logger // Central logger for slurp
 )
@@ -40,6 +41,7 @@ func AddFlags(cmd *cobra.Command) {
 
 	cmd.PersistentFlags().StringVarP(&StoreAddr, "store-addr", "S", StoreAddr, "Storage host address")
 	cmd.PersistentFlags().StringVarP(&StoreToken, "store-token", "T", StoreToken, "Storage auth token")
+	cmd.PersistentFlags().BoolVarP(&StoreSSL, "store-ssl", "I", StoreSSL, "Enable tls certificate verification when connecting to storage")
 }
 
 // LoadConfigFile reads the specified config file
@@ -58,6 +60,7 @@ func LoadConfigFile() error {
 	viper.SetDefault("ssh-addr", SshAddr)
 	viper.SetDefault("ssh-host", SshHostKey)
 	viper.SetDefault("store-addr", StoreAddr)
+	viper.SetDefault("store-ssl", StoreSSL)
 	viper.SetDefault("store-token", StoreToken)
 
 	filename := filepath.Base(ConfigFile)
@@ -79,6 +82,7 @@ func LoadConfigFile() error {
 	SshAddr = viper.GetString("ssh-addr")
 	SshHostKey = viper.GetString("ssh-host")
 	StoreAddr = viper.GetString("store-addr")
+	StoreSSL = viper.GetBool("store-ssl")
 	StoreToken = viper.GetString("store-token")
 
 	return nil
