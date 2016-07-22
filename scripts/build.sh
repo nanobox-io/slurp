@@ -21,8 +21,8 @@ getCurrTag() {
 
 # build slurp
 echo "Building slurp..."
-gox -ldflags="-X github.com/nanopack/slurp/commands.tag=$(getCurrTag)
-  -X github.com/nanopack/slurp/commands.commit=$(getCurrCommit)" \
+gox -ldflags="-X main.version=$(getCurrTag)
+  -X main.commit=$(getCurrCommit)" \
   -osarch "linux/amd64" -output="./build/{{.OS}}/{{.Arch}}/slurp"
 
 # look through each os/arch/file and generate an md5 for each

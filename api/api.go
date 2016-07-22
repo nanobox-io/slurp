@@ -29,21 +29,22 @@ type (
 
 // start the web server
 func StartApi() error {
+	var auth nanoauth.Auth
+	auth.Header = "X-AUTH-TOKEN"
+
 	if config.Insecure {
 		config.Log.Info("Api listening at http://%s...", config.ApiAddress)
-		return http.ListenAndServe(config.ApiAddress, routes())
+		return auth.ListenAndServe(config.ApiAddress, config.ApiToken, routes(), "/ping")
 	}
 
-	var auth nanoauth.Auth
 	cert, err := nanoauth.Generate("slurp.nanobox.io")
 	if err != nil {
 		return err
 	}
 	auth.Certificate = cert
-	auth.Header = "X-AUTH-TOKEN"
 
 	config.Log.Info("Api listening at https://%s...", config.ApiAddress)
-	return auth.ListenAndServeTLS(config.ApiAddress, config.ApiToken, routes())
+	return auth.ListenAndServeTLS(config.ApiAddress, config.ApiToken, routes(), "/ping")
 }
 
 // api routes

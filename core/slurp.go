@@ -102,6 +102,7 @@ func CommitStage(buildId string) error {
 
 	// tar -C buildDir/buildId -czf - . | backend.WriteBlob(buildId)
 	// prepare to compress build dir
+	// todo: should we `--force-local`?
 	cmd := exec.Command("tar", "-C", config.BuildDir+"/"+buildId, "-czf", "-", ".")
 	// cmd.Dir = "/tmp"
 	cmd.Dir = config.BuildDir
@@ -111,23 +112,20 @@ func CommitStage(buildId string) error {
 
 	config.Log.Trace("Running compress command '%v'", cmd.Args)
 
-	// start compressing the build
-	err = cmd.Start()
-	if err != nil {
-		return fmt.Errorf("Failed to start compressing build - %v", err)
-	}
-
-	// write build to backend
+	// prep writing build to backend
 	echan := make(chan error, 1)
 
+	// start stream to backend
 	go func() {
 		echan <- backend.WriteBlob(buildId, blobReader)
 	}()
 
-	// wait for the build to finish
-	err = cmd.Wait()
+	// compress the build
+	err = cmd.Run()
 	if err != nil {
 		return fmt.Errorf("Failed to compress build - %v", err)
+		// the error `io: read/write on closed pipe` here is likely due to
+		// mismatched hoarder/slurp protocols (http/https)
 	}
 
 	config.Log.Trace("Compressed build")

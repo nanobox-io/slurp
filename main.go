@@ -29,7 +29,6 @@ package main
 
 import (
 	"fmt"
-	"os"
 
 	"github.com/jcelliott/lumber"
 	"github.com/spf13/cobra"
@@ -43,11 +42,14 @@ import (
 var (
 	// slurp provides the slurp cli/server functionality
 	slurp = &cobra.Command{
-		Use:   "slurp",
-		Short: "slurp - build intermediary",
-		Long:  ``,
-
-		Run: startSlurp,
+		Use:               "slurp",
+		Short:             "slurp - build intermediary",
+		Long:              ``,
+		SilenceErrors:     true,
+		SilenceUsage:      true,
+		PersistentPreRunE: readConfig,
+		PreRunE:           preFlight,
+		RunE:              startSlurp,
 	}
 
 	// to be populated by linker
@@ -60,41 +62,50 @@ func init() {
 	config.AddFlags(slurp)
 }
 
-// start slurp
-func startSlurp(ccmd *cobra.Command, args []string) {
+func readConfig(ccmd *cobra.Command, args []string) error {
 	if err := config.LoadConfigFile(); err != nil {
 		config.Log.Fatal("Failed to read config - %v", err)
-		os.Exit(1)
+		return fmt.Errorf("")
 	}
 
-	config.Log = lumber.NewConsoleLogger(lumber.LvlInt(config.LogLevel))
+	return nil
+}
 
+func preFlight(ccmd *cobra.Command, args []string) error {
 	if config.Version {
 		fmt.Printf("slurp %s (%s)\n", version, commit)
-		os.Exit(0)
+		return fmt.Errorf("")
 	}
+
+	return nil
+}
+
+// start slurp
+func startSlurp(ccmd *cobra.Command, args []string) error {
+	config.Log = lumber.NewConsoleLogger(lumber.LvlInt(config.LogLevel))
 
 	// initialize backend
 	err := backend.Initialize()
 	if err != nil {
 		config.Log.Fatal("Backend init failed - %v", err)
-		os.Exit(1)
+		return fmt.Errorf("")
 	}
 
 	// start ssh server
 	err = ssh.Start()
 	if err != nil {
 		config.Log.Fatal("SSH server start failed - %v", err)
-		os.Exit(1)
+		return fmt.Errorf("")
 	}
 
 	// start api
 	err = api.StartApi()
 	if err != nil {
 		config.Log.Fatal("Api start failed - %v", err)
-		os.Exit(1)
+		return fmt.Errorf("")
 	}
-	return
+
+	return nil
 }
 
 func main() {

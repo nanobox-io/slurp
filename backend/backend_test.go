@@ -35,6 +35,7 @@ func TestReadBlob(t *testing.T) {
 	body, err := backend.ReadBlob("test")
 	if err != nil {
 		t.Error(err)
+		t.FailNow()
 	}
 	buff := make([]byte, 9)
 	body.Read(buff)
