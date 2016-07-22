@@ -23,6 +23,7 @@
 //    -S, --store-addr="hoarder://127.0.0.1:7410": Storage host address
 //    -I, --store-ssl[=false]: Enable tls certificate verification when connecting to storage
 //    -T, --store-token="": Storage auth token
+//    -v, --version[=false]: Print version info and exit
 //
 package main
 
@@ -48,6 +49,10 @@ var (
 
 		Run: startSlurp,
 	}
+
+	// to be populated by linker
+	version string
+	commit  string
 )
 
 // add cli options to slurp
@@ -65,7 +70,7 @@ func startSlurp(ccmd *cobra.Command, args []string) {
 	config.Log = lumber.NewConsoleLogger(lumber.LvlInt(config.LogLevel))
 
 	if config.Version {
-		fmt.Printf("slurp %s\n", VERSION)
+		fmt.Printf("slurp %s (%s)\n", version, commit)
 		os.Exit(0)
 	}
 

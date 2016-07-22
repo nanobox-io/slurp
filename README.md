@@ -6,7 +6,7 @@ Intermediary to the stored build/blob, used specifically to speed up publishing 
 
 ## Quickstart:
 ```sh
-# Once hoarder is running, slurp can be quickly started by running ()
+# Once hoarder is running, slurp can be quickly started by running:
 slurp -b /tmp/build
 
 # register a new build
@@ -75,6 +75,7 @@ Flags:
   -S, --store-addr="hoarder://127.0.0.1:7410": Storage host address
   -I, --store-ssl[=false]: Enable tls certificate verification when connecting to storage
   -T, --store-token="": Storage auth token
+  -v, --version[=false]: Print version info and exit
 ```
 
 ## API:
