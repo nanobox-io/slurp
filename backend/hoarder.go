@@ -20,6 +20,9 @@ func (self hoarder) initialize() error {
 // get blob from hoarder and return Reader for piping to next command
 func (self hoarder) readBlob(id string) (io.ReadCloser, error) {
 	res, err := self.rest("GET", "blobs/"+id, nil)
+	if err != nil { // prevent panic if no res
+		return nil, err
+	}
 	return res.Body, err
 }
 

@@ -2,8 +2,8 @@
 package slurp
 
 import (
-	"bytes"
 	"fmt"
+	"io"
 	"os"
 	"os/exec"
 	"sync"
@@ -36,10 +36,7 @@ func AddStage(oldId, newId string) error {
 
 	// backend.ReadBlob(oldId) | tar -C buildDir/newId -zxf -
 	if oldId != "" {
-		// todo: can this stream somehow? send a *reader to readblob, goroutine readblob
-		//   then by assigning the *reader to cmd.Stdin, it shouldn't block (keep from
-		//   storing build in memory)?? maybe
-		// get last build from backend
+		// stream last build from backend
 		res, err := backend.ReadBlob(oldId)
 		if err != nil {
 			return fmt.Errorf("Failed to get old build - %v", err)
@@ -81,7 +78,7 @@ func AddStage(oldId, newId string) error {
 // CommitStage compresses the new build, uploads it to the backend and removes
 // the user secret from the ssh server.
 // Bash equivalent:
-//  `tar -C buildDir/buildId -czf - . | curl localhost:7410/blobs/newId --data-binary @-`
+//  `tar -C buildDir/buildId -czf - . | curl localhost:7410/blobs/newId -T -`
 func CommitStage(buildId string) error {
 	// remove user first
 	err := getUser(buildId)
@@ -92,8 +89,8 @@ func CommitStage(buildId string) error {
 		}
 	}
 
-	// define buffer
-	var blob bytes.Buffer
+	// don't buffer (free the rams)
+	blobReader, blobWriter := io.Pipe()
 
 	config.Log.Trace("Preparing to compress '%v'", config.BuildDir+"/"+buildId)
 
@@ -105,25 +102,43 @@ func CommitStage(buildId string) error {
 
 	// tar -C buildDir/buildId -czf - . | backend.WriteBlob(buildId)
 	// prepare to compress build dir
+	// todo: should we `--force-local`?
 	cmd := exec.Command("tar", "-C", config.BuildDir+"/"+buildId, "-czf", "-", ".")
 	// cmd.Dir = "/tmp"
 	cmd.Dir = config.BuildDir
 
 	// pipe compressed build to write command
-	cmd.Stdout = &blob
+	cmd.Stdout = blobWriter
 
 	config.Log.Trace("Running compress command '%v'", cmd.Args)
+
+	// prep writing build to backend
+	echan := make(chan error, 1)
+
+	// start stream to backend
+	go func() {
+		echan <- backend.WriteBlob(buildId, blobReader)
+	}()
+
+	// compress the build
 	err = cmd.Run()
 	if err != nil {
 		return fmt.Errorf("Failed to compress build - %v", err)
+		// the error `io: read/write on closed pipe` here is likely due to
+		// mismatched hoarder/slurp protocols (http/https)
 	}
+
 	config.Log.Trace("Compressed build")
 
-	// write build to backend
-	err = backend.WriteBlob(buildId, &blob)
+	// if the command finished, blobWriter is done
+	blobWriter.Close()
+
+	// wait for WriteBlob to finish
+	err = <-echan
 	if err != nil {
 		return fmt.Errorf("Failed to write build - %v", err)
 	}
+
 	config.Log.Trace("Uploaded build")
 
 	return nil
