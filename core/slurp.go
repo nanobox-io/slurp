@@ -45,7 +45,7 @@ func AddStage(oldId, newId string) error {
 		config.Log.Trace("Fetched build")
 
 		// prepare to extract to new build dir
-		cmd := exec.Command("tar", "-C", newId, "-zxf", "-")
+		cmd := exec.Command("tar", "--atime-preserve", "-C", newId, "-zxf", "-")
 		// cmd.Dir = "/tmp"
 		cmd.Dir = config.BuildDir
 
@@ -102,10 +102,13 @@ func CommitStage(buildId string) error {
 
 	// tar -C buildDir/buildId -czf - . | backend.WriteBlob(buildId)
 	// prepare to compress build dir
-	// todo: should we `--force-local`?
 	cmd := exec.Command("tar", "-C", config.BuildDir+"/"+buildId, "-czf", "-", ".")
 	// cmd.Dir = "/tmp"
 	cmd.Dir = config.BuildDir
+
+	// keep the modified time unchanged when compressing (keep md5 the same)
+	cmd.Env = os.Environ()
+	cmd.Env = append(cmd.Env, "GZIP=-n")
 
 	// pipe compressed build to write command
 	cmd.Stdout = blobWriter
@@ -125,7 +128,8 @@ func CommitStage(buildId string) error {
 	if err != nil {
 		return fmt.Errorf("Failed to compress build - %v", err)
 		// the error `io: read/write on closed pipe` here is likely due to
-		// wrong backend protocol (http/https)
+		// wrong backend protocol (http/https) resolve with different scheme
+		// for hoarder 'hoarder[s]://'
 	}
 
 	config.Log.Trace("Compressed build")

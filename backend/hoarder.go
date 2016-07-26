@@ -41,8 +41,8 @@ func (self hoarder) rest(method, path string, body io.Reader) (*http.Response, e
 	client = http.DefaultClient
 	uri := fmt.Sprintf("%s://%s/%s", self.proto, storeAddr, path)
 
-	// if store-ssl is true, verify cert
-	if !config.StoreSSL {
+	// if insecure is false, verify cert
+	if config.Insecure {
 		http.DefaultTransport.(*http.Transport).TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
 	}
 

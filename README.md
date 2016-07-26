@@ -43,14 +43,13 @@ An optional config file can also be passed on startup:
 >```json
 {
   "api-token": "secret",
-  "api-address": "127.0.0.1:1566",
+  "api-address": "https://127.0.0.1:1566",
   "build-dir": "/var/db/slurp/build/",
-  "config-file": "",
-  "insecure": false,
+  "insecure": true,
   "log-level": "info",
   "ssh-addr": "127.0.0.1:1567",
   "ssh-host": "/var/db/slurp/slurp_rsa",
-  "store-addr": "hoarder://127.0.0.1:7410",
+  "store-addr": "hoarders://127.0.0.1:7410",
   "store-token": ""
 }
 ```
@@ -64,16 +63,15 @@ Usage:
   slurp [flags]
 
 Flags:
-  -a, --api-address="127.0.0.1:1566": Listen uri for the API (scheme defaults to https)
+  -a, --api-address="https://127.0.0.1:1566": Listen uri for the API (scheme defaults to https)
   -t, --api-token="secret": Token for API Access
   -b, --build-dir="/var/db/slurp/build/": Build staging directory
   -c, --config-file="": Configuration file to load
-  -i, --insecure[=false]: Disable tls key checking (client) and listen on http (server)
+  -i, --insecure[=true]: Disable tls certificate verification when connecting to storage
   -l, --log-level="info": Log level to output [fatal|error|info|debug|trace]
   -s, --ssh-addr="127.0.0.1:1567": Address ssh server will listen on (ip:port combo)
   -k, --ssh-host="/var/db/slurp/slurp_rsa": SSH host (private) key file
-  -S, --store-addr="hoarder://127.0.0.1:7410": Storage host address
-  -I, --store-ssl[=false]: Enable tls certificate verification when connecting to storage
+  -S, --store-addr="hoarders://127.0.0.1:7410": Storage host address
   -T, --store-token="": Storage auth token
   -v, --version[=false]: Print version info and exit
 ```
@@ -117,6 +115,13 @@ Fields:
 - routinely clean up undeleted builds
 
 ## Changelog
+- v0.0.4 (July 26, 2016)
+  - Explicitly define protocols
+  - Unchanged builds keep the same md5 in hoarder
+
+- v0.0.3 (July 22, 2016)
+  - Stream data to/from hoarder, lowering memory footprint
+
 - v0.0.2 (May 4, 2016)
   - Create config option (`store-ssl`) to enable cert verification to storage backend
   - Add `-v` and `--version` as a command
