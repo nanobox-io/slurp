@@ -12,18 +12,17 @@ import (
 )
 
 var (
-	ApiToken   = "secret"                   // Token for API Access
-	ApiAddress = "127.0.0.1:1566"           // Listen address for the API
-	BuildDir   = "/var/db/slurp/build/"     // Build staging directory
-	ConfigFile = ""                         // Configuration file to load
-	Insecure   = false                      // Disable tls key checking (client) and listen on http (server)
-	LogLevel   = "info"                     // Log level to output [fatal|error|info|debug|trace]
-	SshAddr    = "127.0.0.1:1567"           // Address ssh server will listen on (ip:port combo)
-	SshHostKey = "/var/db/slurp/slurp_rsa"  // SSH host (private) key file
-	StoreAddr  = "hoarder://127.0.0.1:7410" // Storage host address
-	StoreSSL   = false                      // Disable tls key checking (client) and listen on http (server)
-	StoreToken = ""                         // Storage auth token
-	Version    = false                      // Print version info and exit
+	ApiToken   = "secret"                    // Token for API Access
+	ApiAddress = "https://127.0.0.1:1566"    // Listen uri for the API (scheme defaults to https)
+	BuildDir   = "/var/db/slurp/build/"      // Build staging directory
+	ConfigFile = ""                          // Configuration file to load
+	Insecure   = true                        // Disable tls key checking to hoarder
+	LogLevel   = "info"                      // Log level to output [fatal|error|info|debug|trace]
+	SshAddr    = "127.0.0.1:1567"            // Address ssh server will listen on (ip:port combo)
+	SshHostKey = "/var/db/slurp/slurp_rsa"   // SSH host (private) key file
+	StoreAddr  = "hoarders://127.0.0.1:7410" // Storage host address
+	StoreToken = ""                          // Storage auth token
+	Version    = false                       // Print version info and exit
 
 	Log lumber.Logger // Central logger for slurp
 )
@@ -31,10 +30,9 @@ var (
 // AddFlags adds the available cli flags
 func AddFlags(cmd *cobra.Command) {
 	cmd.PersistentFlags().StringVarP(&ApiToken, "api-token", "t", ApiToken, "Token for API Access")
-	cmd.PersistentFlags().StringVarP(&ApiAddress, "api-address", "a", ApiAddress, "Listen address for the API")
+	cmd.PersistentFlags().StringVarP(&ApiAddress, "api-address", "a", ApiAddress, "Listen uri for the API (scheme defaults to https)")
 	cmd.PersistentFlags().StringVarP(&BuildDir, "build-dir", "b", BuildDir, "Build staging directory")
-	cmd.PersistentFlags().StringVarP(&ConfigFile, "config-file", "c", ConfigFile, "Configuration file to load")
-	cmd.PersistentFlags().BoolVarP(&Insecure, "insecure", "i", Insecure, "Disable tls key checking (client) and listen on http (server)")
+	cmd.PersistentFlags().BoolVarP(&Insecure, "insecure", "i", Insecure, "Disable tls certificate verification when connecting to storage")
 	cmd.PersistentFlags().StringVarP(&LogLevel, "log-level", "l", LogLevel, "Log level to output [fatal|error|info|debug|trace]")
 
 	cmd.PersistentFlags().StringVarP(&SshAddr, "ssh-addr", "s", SshAddr, "Address ssh server will listen on (ip:port combo)")
@@ -42,8 +40,8 @@ func AddFlags(cmd *cobra.Command) {
 
 	cmd.PersistentFlags().StringVarP(&StoreAddr, "store-addr", "S", StoreAddr, "Storage host address")
 	cmd.PersistentFlags().StringVarP(&StoreToken, "store-token", "T", StoreToken, "Storage auth token")
-	cmd.PersistentFlags().BoolVarP(&StoreSSL, "store-ssl", "I", StoreSSL, "Enable tls certificate verification when connecting to storage")
 
+	cmd.PersistentFlags().StringVarP(&ConfigFile, "config-file", "c", ConfigFile, "Configuration file to load")
 	cmd.Flags().BoolVarP(&Version, "version", "v", Version, "Print version info and exit")
 }
 
@@ -57,13 +55,11 @@ func LoadConfigFile() error {
 	viper.SetDefault("api-token", ApiToken)
 	viper.SetDefault("api-address", ApiAddress)
 	viper.SetDefault("build-dir", BuildDir)
-	viper.SetDefault("config-file", ConfigFile)
 	viper.SetDefault("insecure", Insecure)
 	viper.SetDefault("log-level", LogLevel)
 	viper.SetDefault("ssh-addr", SshAddr)
 	viper.SetDefault("ssh-host", SshHostKey)
 	viper.SetDefault("store-addr", StoreAddr)
-	viper.SetDefault("store-ssl", StoreSSL)
 	viper.SetDefault("store-token", StoreToken)
 
 	filename := filepath.Base(ConfigFile)
@@ -79,13 +75,11 @@ func LoadConfigFile() error {
 	ApiToken = viper.GetString("api-token")
 	ApiAddress = viper.GetString("api-address")
 	BuildDir = viper.GetString("build-dir")
-	ConfigFile = viper.GetString("config-file")
 	Insecure = viper.GetBool("insecure")
 	LogLevel = viper.GetString("log-level")
 	SshAddr = viper.GetString("ssh-addr")
 	SshHostKey = viper.GetString("ssh-host")
 	StoreAddr = viper.GetString("store-addr")
-	StoreSSL = viper.GetBool("store-ssl")
 	StoreToken = viper.GetString("store-token")
 
 	return nil

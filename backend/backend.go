@@ -29,10 +29,12 @@ func Initialize() error {
 		return fmt.Errorf("Failed to parse backend connection - %v", err)
 	}
 	switch u.Scheme {
-	case "hoarder":
-		backend = &hoarder{}
+	case "hoarder": // insecure hoarder
+		backend = &hoarder{proto: "http"}
+	case "hoarders": // secure hoarder
+		backend = &hoarder{proto: "https"}
 	default:
-		backend = &hoarder{}
+		backend = &hoarder{proto: "https"}
 	}
 	storeAddr = u.Host
 	return backend.initialize()
