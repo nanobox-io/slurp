@@ -12,18 +12,18 @@ import (
 )
 
 var (
-	ApiToken   = "secret"                   // Token for API Access
-	ApiAddress = "127.0.0.1:1566"           // Listen address for the API
-	BuildDir   = "/var/db/slurp/build/"     // Build staging directory
-	ConfigFile = ""                         // Configuration file to load
-	Insecure   = false                      // Disable tls key checking (client) and listen on http (server)
-	LogLevel   = "info"                     // Log level to output [fatal|error|info|debug|trace]
-	SshAddr    = "127.0.0.1:1567"           // Address ssh server will listen on (ip:port combo)
-	SshHostKey = "/var/db/slurp/slurp_rsa"  // SSH host (private) key file
-	StoreAddr  = "hoarder://127.0.0.1:7410" // Storage host address
-	StoreSSL   = false                      // Disable tls key checking (client) and listen on http (server)
-	StoreToken = ""                         // Storage auth token
-	Version    = false                      // Print version info and exit
+	ApiToken   = "secret"                    // Token for API Access
+	ApiAddress = "https://127.0.0.1:1566"    // Listen uri for the API (scheme defaults to https)
+	BuildDir   = "/var/db/slurp/build/"      // Build staging directory
+	ConfigFile = ""                          // Configuration file to load
+	Insecure   = false                       // Disable tls key checking (client)
+	LogLevel   = "info"                      // Log level to output [fatal|error|info|debug|trace]
+	SshAddr    = "127.0.0.1:1567"            // Address ssh server will listen on (ip:port combo)
+	SshHostKey = "/var/db/slurp/slurp_rsa"   // SSH host (private) key file
+	StoreAddr  = "hoarders://127.0.0.1:7410" // Storage host address
+	StoreSSL   = false                       // Disable tls key checking (client) and listen on http (server)
+	StoreToken = ""                          // Storage auth token
+	Version    = false                       // Print version info and exit
 
 	Log lumber.Logger // Central logger for slurp
 )
@@ -31,7 +31,7 @@ var (
 // AddFlags adds the available cli flags
 func AddFlags(cmd *cobra.Command) {
 	cmd.PersistentFlags().StringVarP(&ApiToken, "api-token", "t", ApiToken, "Token for API Access")
-	cmd.PersistentFlags().StringVarP(&ApiAddress, "api-address", "a", ApiAddress, "Listen address for the API")
+	cmd.PersistentFlags().StringVarP(&ApiAddress, "api-address", "a", ApiAddress, "Listen uri for the API (scheme defaults to https)")
 	cmd.PersistentFlags().StringVarP(&BuildDir, "build-dir", "b", BuildDir, "Build staging directory")
 	cmd.PersistentFlags().StringVarP(&ConfigFile, "config-file", "c", ConfigFile, "Configuration file to load")
 	cmd.PersistentFlags().BoolVarP(&Insecure, "insecure", "i", Insecure, "Disable tls key checking (client) and listen on http (server)")

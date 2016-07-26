@@ -5,5 +5,5 @@ go: 1.6
 install:
   - go get github.com/nanopack/hoarder
   - go get -t -v .
-  - hoarder --server -b file:///tmp/hoarder --insecure=false &
+  - hoarder --server -b file:///tmp/hoarder -H "https://127.0.0.1:7410" &
 script: go test -v ./...

@@ -9,7 +9,9 @@ import (
 	"github.com/nanobox-io/slurp/config"
 )
 
-type hoarder struct{}
+type hoarder struct {
+	proto string
+}
 
 // ensure hoarder is up
 func (self hoarder) initialize() error {
@@ -37,7 +39,7 @@ func (self hoarder) rest(method, path string, body io.Reader) (*http.Response, e
 	config.Log.Trace("[client] - %v hoarder/%v", method, path)
 	var client *http.Client
 	client = http.DefaultClient
-	uri := fmt.Sprintf("https://%s/%s", storeAddr, path)
+	uri := fmt.Sprintf("%s://%s/%s", self.proto, storeAddr, path)
 
 	// if store-ssl is true, verify cert
 	if !config.StoreSSL {
@@ -51,19 +53,8 @@ func (self hoarder) rest(method, path string, body io.Reader) (*http.Response, e
 	req.Header.Add("X-AUTH-TOKEN", config.StoreToken)
 	res, err := client.Do(req)
 	if err != nil {
-		// if requesting `https://` failed, server may have been started with `-i`, try `http://`
-		uri = fmt.Sprintf("http://%s/%s", storeAddr, path)
-		req, er := http.NewRequest(method, uri, body)
-		if er != nil {
-			panic(er)
-		}
-		req.Header.Add("X-AUTH-TOKEN", config.StoreToken)
-		var err2 error
-		res, err2 = client.Do(req)
-		if err2 != nil {
-			// return original error to client
-			return nil, err
-		}
+		// return original error to client
+		return nil, err
 	}
 	if res.StatusCode == 401 {
 		return nil, fmt.Errorf("401 Unauthorized. Please specify backend api token (-T 'backend-token')")

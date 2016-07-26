@@ -24,7 +24,7 @@ func TestMain(m *testing.M) {
 	// manually configure
 	initialize()
 
-	args := strings.Split("-b /tmp/slurpMain/ -l fatal -k /tmp/slurp_rsa -s 127.0.0.1:1568 -a 127.0.0.1:1564", " ")
+	args := strings.Split("-b /tmp/slurpMain/ -l fatal -k /tmp/slurp_rsa -s 127.0.0.1:1568 -a https://127.0.0.1:1564", " ")
 	slurp.SetArgs(args)
 
 	// start api
@@ -70,7 +70,7 @@ func initialize() {
 func rest(method, route, data string) ([]byte, error) {
 	body := bytes.NewBuffer([]byte(data))
 
-	req, _ := http.NewRequest(method, fmt.Sprintf("https://%s%s", config.ApiAddress, route), body)
+	req, _ := http.NewRequest(method, fmt.Sprintf("%s%s", config.ApiAddress, route), body)
 	req.Header.Add("X-AUTH-TOKEN", "")
 
 	res, err := http.DefaultClient.Do(req)

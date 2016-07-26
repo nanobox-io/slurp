@@ -125,7 +125,7 @@ func CommitStage(buildId string) error {
 	if err != nil {
 		return fmt.Errorf("Failed to compress build - %v", err)
 		// the error `io: read/write on closed pipe` here is likely due to
-		// mismatched hoarder/slurp protocols (http/https)
+		// wrong backend protocol (http/https)
 	}
 
 	config.Log.Trace("Compressed build")

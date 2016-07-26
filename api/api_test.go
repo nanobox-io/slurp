@@ -118,7 +118,7 @@ func initialize() {
 func rest(method, route, data string) ([]byte, error) {
 	body := bytes.NewBuffer([]byte(data))
 
-	req, _ := http.NewRequest(method, fmt.Sprintf("https://%s%s", config.ApiAddress, route), body)
+	req, _ := http.NewRequest(method, fmt.Sprintf("%s%s", config.ApiAddress, route), body)
 	req.Header.Add("X-AUTH-TOKEN", "")
 
 	res, err := http.DefaultClient.Do(req)

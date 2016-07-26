@@ -64,7 +64,7 @@ Usage:
   slurp [flags]
 
 Flags:
-  -a, --api-address="127.0.0.1:1566": Listen address for the API
+  -a, --api-address="127.0.0.1:1566": Listen uri for the API (scheme defaults to https)
   -t, --api-token="secret": Token for API Access
   -b, --build-dir="/var/db/slurp/build/": Build staging directory
   -c, --config-file="": Configuration file to load

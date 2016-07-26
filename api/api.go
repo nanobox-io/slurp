@@ -4,8 +4,10 @@ package api
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io/ioutil"
 	"net/http"
+	"net/url"
 
 	"github.com/gorilla/pat"
 	"github.com/nanobox-io/golang-nanoauth"
@@ -29,12 +31,17 @@ type (
 
 // start the web server
 func StartApi() error {
+	uri, err := url.Parse(config.ApiAddress)
+	if err != nil {
+		return fmt.Errorf("Failed to parse 'api-address' - %v", err)
+	}
+
 	var auth nanoauth.Auth
 	auth.Header = "X-AUTH-TOKEN"
 
-	if config.Insecure {
-		config.Log.Info("Api listening at http://%s...", config.ApiAddress)
-		return auth.ListenAndServe(config.ApiAddress, config.ApiToken, routes(), "/ping")
+	if uri.Scheme == "http" {
+		config.Log.Info("Api listening at http://%s...", uri.Host)
+		return auth.ListenAndServe(uri.Host, config.ApiToken, routes(), "/ping")
 	}
 
 	cert, err := nanoauth.Generate("slurp.nanobox.io")
@@ -43,8 +50,8 @@ func StartApi() error {
 	}
 	auth.Certificate = cert
 
-	config.Log.Info("Api listening at https://%s...", config.ApiAddress)
-	return auth.ListenAndServeTLS(config.ApiAddress, config.ApiToken, routes(), "/ping")
+	config.Log.Info("Api listening at https://%s...", uri.Host)
+	return auth.ListenAndServeTLS(uri.Host, config.ApiToken, routes(), "/ping")
 }
 
 // api routes
