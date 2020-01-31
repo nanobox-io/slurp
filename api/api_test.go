@@ -1,4 +1,4 @@
-package api_test
+package api
 
 import (
 	"bytes"
@@ -12,7 +12,6 @@ import (
 
 	"github.com/jcelliott/lumber"
 
-	"github.com/nanobox-io/slurp/api"
 	"github.com/nanobox-io/slurp/backend"
 	"github.com/nanobox-io/slurp/config"
 )
@@ -25,7 +24,7 @@ func TestMain(m *testing.M) {
 	initialize()
 
 	// start api
-	go api.StartApi()
+	go StartApi()
 	<-time.After(2 * time.Second)
 	rtn := m.Run()
 
@@ -46,11 +45,19 @@ func TestPing(t *testing.T) {
 }
 
 func TestAddStage(t *testing.T) {
+	oldRead := cryptoRead
+	cryptoRead = func(b []byte) (int, error) {
+		copy(b, []byte{1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1})
+		return 16, nil
+	}
+	defer func() { cryptoRead = oldRead }()
+
 	body, err := rest("POST", "/stages", "{\"new-id\": \"newbuild\"}")
 	if err != nil {
 		t.Error(err)
 	}
-	if string(body) != "{\"secret\":\"newbuild\"}\n" {
+
+	if string(body) != "{\"secret\":\"01010101010101010101010101010101\"}\n" {
 		t.Errorf("%q doesn't match expected out", body)
 	}
 

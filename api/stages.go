@@ -88,10 +88,12 @@ func deleteStage(rw http.ResponseWriter, req *http.Request) {
 	writeBody(rw, req, apiMsg{"Success"}, http.StatusOK)
 }
 
+var cryptoRead = rand.Read
+
 // generateSecret creates a new cryptographically secure secret
 func generateSecret() (string, error) {
-	var b [32]byte
-	_, err := rand.Read(b[:])
+	var b [16]byte
+	_, err := cryptoRead(b[:])
 	if err != nil {
 		return "", err
 	}
