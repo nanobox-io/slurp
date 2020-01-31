@@ -146,7 +146,7 @@ func userAuth(conn ssh.ConnMetadata, key ssh.PublicKey) (*ssh.Permissions, error
 	config.Log.Trace("Attempting to auth user: '%v'", conn.User())
 	// assign a new var here to prevent issues using a user as its deleted
 	for _, permittedUser := range authUsers {
-		if conn.User() == permittedUser {
+		if conn.User() == permittedUser.Name {
 			config.Log.Debug("User: '%v' authorized", conn.User())
 			return nil, nil
 		}
@@ -170,13 +170,26 @@ func handleConnection(conn net.Conn, sshConfig *ssh.ServerConfig) {
 	// service incoming request channel
 	go ssh.DiscardRequests(reqs)
 
+	user := sshConn.Conn.User()
+	var buildID string
+	for _, authUser := range authUsers {
+		if user == authUser.Name {
+			buildID = authUser.BuildID
+			break
+		}
+	}
+	if buildID == "" {
+		config.Log.Error("Failed to get build ID", user)
+		return
+	}
+
 	for newChannel := range chans {
 		if newChannel.ChannelType() != "session" {
 			config.Log.Debug("Unknown channel type - %v", newChannel.ChannelType())
 			newChannel.Reject(ssh.UnknownChannelType, "unknown channel type")
 			continue
 		}
-		handleChannel(newChannel, sshConn.Conn.User())
+		handleChannel(newChannel, buildID)
 	}
 }
 

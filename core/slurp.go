@@ -68,7 +68,7 @@ func AddStage(oldId, newId, secret string) error {
 		res.Close()
 	}
 
-	err = ssh.AddUser(secret)
+	err = ssh.AddUser(secret, newId)
 	if err != nil {
 		return fmt.Errorf("Failed to add user - %v", err)
 	}

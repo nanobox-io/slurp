@@ -37,7 +37,7 @@ func TestMain(m *testing.M) {
 }
 
 func TestAddUser(t *testing.T) {
-	err := ssh.AddUser("sshTest")
+	err := ssh.AddUser("sshTest", "123")
 	if err != nil {
 		t.Error(err)
 	}
