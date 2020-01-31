@@ -28,13 +28,13 @@ func TestMain(m *testing.M) {
 }
 
 func TestAddStage(t *testing.T) {
-	err := slurp.AddStage("", "core-new")
+	err := slurp.AddStage("", "core-new", "sekret")
 	if err != nil {
 		t.Error(err)
 	}
 
 	// use build from api_test
-	err = slurp.AddStage("newbuild", "core-new")
+	err = slurp.AddStage("newbuild", "core-new", "sekret2")
 	if err != nil {
 		t.Error(err)
 	}

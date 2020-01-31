@@ -1,6 +1,8 @@
 package api
 
 import (
+	"crypto/rand"
+	"encoding/hex"
 	"net/http"
 
 	"github.com/nanobox-io/slurp/core"
@@ -31,14 +33,20 @@ func addStage(rw http.ResponseWriter, req *http.Request) {
 		return
 	}
 
+	secret, err := generateSecret()
+	if err != nil {
+		writeBody(rw, req, apiError{ErrorString: "internal error"}, http.StatusInternalServerError)
+		return
+	}
+
 	// stage the build
-	err = slurp.AddStage(stage.OldId, stage.NewId)
+	err = slurp.AddStage(stage.OldId, stage.NewId, secret)
 	if err != nil {
 		writeBody(rw, req, apiError{err.Error()}, http.StatusInternalServerError)
 		return
 	}
 
-	writeBody(rw, req, auth{stage.NewId}, http.StatusOK)
+	writeBody(rw, req, auth{AuthSecret: secret}, http.StatusOK)
 }
 
 // commitStage is called once the local build is synced with the staged build. It will
@@ -78,4 +86,14 @@ func deleteStage(rw http.ResponseWriter, req *http.Request) {
 	}
 
 	writeBody(rw, req, apiMsg{"Success"}, http.StatusOK)
+}
+
+// generateSecret creates a new cryptographically secure secret
+func generateSecret() (string, error) {
+	var b [32]byte
+	_, err := rand.Read(b[:])
+	if err != nil {
+		return "", err
+	}
+	return hex.EncodeToString(b[:]), nil
 }

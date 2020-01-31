@@ -13,9 +13,14 @@ import (
 	"github.com/nanobox-io/slurp/ssh"
 )
 
+type build struct {
+	ID     string
+	Secret string
+}
+
 var (
 	// copy of all non-committed builds
-	builds []string
+	builds []build
 
 	// mutex ensures updates to builds are atomic
 	mutex = sync.Mutex{}
@@ -27,7 +32,7 @@ var (
 // generates, and returns, a new user secret for rsyncing.
 // Bash equivalent:
 //  `curl localhost:7410/blobs/oldId | tar -C buildDir/newId -zxf -`
-func AddStage(oldId, newId string) error {
+func AddStage(oldId, newId, secret string) error {
 	// prepare location for extraction
 	err := os.MkdirAll(config.BuildDir+"/"+newId, 0755)
 	if err != nil {
@@ -63,13 +68,16 @@ func AddStage(oldId, newId string) error {
 		res.Close()
 	}
 
-	err = ssh.AddUser(newId)
+	err = ssh.AddUser(secret)
 	if err != nil {
 		return fmt.Errorf("Failed to add user - %v", err)
 	}
 
 	mutex.Lock()
-	builds = append(builds, newId)
+	builds = append(builds, build{
+		ID:     newId,
+		Secret: secret,
+	})
 	mutex.Unlock()
 
 	return nil
@@ -81,9 +89,9 @@ func AddStage(oldId, newId string) error {
 //  `tar -C buildDir/buildId -czf - . | curl localhost:7410/blobs/newId -T -`
 func CommitStage(buildId string) error {
 	// remove user first
-	err := getUser(buildId)
+	secret, err := getUser(buildId)
 	if err == nil {
-		err = ssh.DelUser(buildId)
+		err = ssh.DelUser(secret)
 		if err != nil {
 			return fmt.Errorf("Failed to remove user - %v", err)
 		}
@@ -151,9 +159,9 @@ func CommitStage(buildId string) error {
 // DeleteStage removes files for a specific build.
 func DeleteStage(buildId string) error {
 	// remove user first
-	err := getUser(buildId)
+	secret, err := getUser(buildId)
 	if err != nil {
-		err = ssh.DelUser(buildId)
+		err = ssh.DelUser(secret)
 		if err != nil {
 			return fmt.Errorf("Failed to remove user - %v", err)
 		}
@@ -170,7 +178,7 @@ func DeleteStage(buildId string) error {
 	// remove cached build
 	mutex.Lock()
 	for i := range builds {
-		if builds[i] == buildId {
+		if builds[i].ID == buildId {
 			builds = append(builds[:i], builds[i+1:]...)
 			break
 		}
@@ -181,11 +189,11 @@ func DeleteStage(buildId string) error {
 }
 
 // getUser gets the user secret corresponding to an uncommitted build.
-func getUser(buildId string) error {
+func getUser(buildId string) (string, error) {
 	for _, build := range builds {
-		if build == buildId {
-			return nil
+		if build.ID == buildId {
+			return build.Secret, nil
 		}
 	}
-	return fmt.Errorf("No Build Found")
+	return "", fmt.Errorf("No Build Found")
 }
