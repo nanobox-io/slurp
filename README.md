@@ -40,7 +40,7 @@ An optional config file can also be passed on startup:
 `slurp -c /path/to/config.json`
 
 >config.json
->```json
+```json
 {
   "api-token": "secret",
   "api-address": "https://127.0.0.1:1566",
@@ -78,8 +78,8 @@ Flags:
 
 ## API:
 
-| Route | Description | Payload | Output |
-| --- | --- | --- | --- |
+| Method | Route | Description | Payload | Output |
+| --- | --- | --- | --- | --- |
 | **POST** | /stages | Stage a new build | json stage object | json auth object |
 | **PUT** | /stages/:id | Commit a new build | nil | success/err message |
 | **DELETE** | /stages/:id | Delete a build | nil | success/err message |
